@@ -77,7 +77,7 @@ export interface ECSServiceConfig {
 
   /**
    * Health check configuration for the ECS service.
-   * @warning The health check will be performed on the path specified here with `curl`. Your dockerfile must install `curl` or a similar tool.
+   * @warning The health check will be performed on the path specified here with `curl`. Your Dockerfile must install `curl` or a similar tool.
    * - `path`: The path for the health check endpoint of the ECS service.
    *   Must return a 200 status code to be considered healthy.
    *   @example '/health'
@@ -196,6 +196,17 @@ interface MultiServiceECSFargateLoadBalancedConstructProps
 
   /**
    * Configuration for the ECS services.
+   * Each entry defines a single service in the ECS Fargate cluster.
+   *
+   * This includes settings such as:
+   * - The service name (`name`): Must be unique within the cluster.
+   * - The port (`port`) on which the service listens (1-65535).
+   * - The number of desired tasks (`desiredCount`).
+   * - Docker image configuration (`image`).
+   * - Health check configuration (`healthCheckConfig`).
+   * - Auto-scaling configuration (`autoScalingConfig`).
+   *
+   * See `ECSServiceConfig` for detailed documentation of each property.
    */
   ecsServices: ECSServiceConfig[];
 }
