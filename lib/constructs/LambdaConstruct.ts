@@ -5,7 +5,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import { OutputFormat } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Duration } from "aws-cdk-lib";
-import { APIGatewayWithCognitoUserPoolConstruct } from "@constructs/APIGatewayWithCognitoUserPoolConstruct";
+import { APIGatewayWithCognitoUserPoolConstruct } from "./APIGatewayWithCognitoUserPoolConstruct";
 
 /**
  * Defines API Gateway integration details.

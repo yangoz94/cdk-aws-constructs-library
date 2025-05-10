@@ -2,7 +2,7 @@ import { Construct } from "constructs";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as cdk from "aws-cdk-lib";
-import { NestedStack, NestedStackProps, RemovalPolicy } from "aws-cdk-lib";
+import { RemovalPolicy } from "aws-cdk-lib";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { AwsLogDriver } from "aws-cdk-lib/aws-ecs";
 import { Platform } from "aws-cdk-lib/aws-ecr-assets";
@@ -11,7 +11,7 @@ import z from "zod/lib";
 /**
  * Props for configuring a single ECS Fargate service construct.
  */
-interface SingleServicePrivateECSFargateConstructProps extends cdk.StackProps {
+export interface SingleServicePrivateECSFargateConstructProps extends cdk.StackProps {
   /**
    * The name of the application.
    * Must be at least 3 characters long.
