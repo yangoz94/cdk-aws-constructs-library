@@ -6,6 +6,7 @@ import * as secretsManager from "aws-cdk-lib/aws-secretsmanager";
 import { Duration } from "aws-cdk-lib/core";
 import { Construct } from "constructs";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
+import { CfnDBCluster } from "aws-cdk-lib/aws-rds";
 
 /**
  * Properties for configuring the AuroraServerlessV2Construct.
@@ -140,7 +141,7 @@ export class AuroraServerlessV2Construct extends Construct {
 
     /* Aurora PostgreSQL engine version for Serverless V2 */
     const dbEngine = rds.DatabaseClusterEngine.auroraPostgres({
-      version: rds.AuroraPostgresEngineVersion.VER_16_2,
+      version: rds.AuroraPostgresEngineVersion.VER_16_8,
     });
 
     /* Create the database name */
@@ -173,7 +174,9 @@ export class AuroraServerlessV2Construct extends Construct {
           : cdk.RemovalPolicy.DESTROY,
         securityGroups: [rdsSecurityGroup],
         serverlessV2MaxCapacity: isProd ? 8 : 4 /* Maximum ACUs */,
-        serverlessV2MinCapacity: isProd ? 1 : 0.5 /* Minimum ACUs */,
+        serverlessV2MinCapacity: isProd
+          ? 1
+          : 0 /* scale down to 0 in non-prod environments after 15 minutes of inactivity to save costs. A call to the database will wake it up but it will take take around 30 seconds to be ready.*/,
         parameters: {
           max_parallel_workers: "16",
           max_parallel_workers_per_gather: "4",
@@ -191,6 +194,17 @@ export class AuroraServerlessV2Construct extends Construct {
         ),
       }
     );
+
+    /* Set the auto-pause duration to 15 minutes (unless it's prod) */
+    if (!isProd) {
+      const cfnDbCluster = this.dbCluster.node.defaultChild;
+      if (cfnDbCluster instanceof CfnDBCluster) {
+        cfnDbCluster.addPropertyOverride(
+          "ServerlessV2ScalingConfiguration.SecondsUntilAutoPause",
+          Duration.minutes(15).toSeconds()
+        );
+      }
+    }
 
     /* Create Aurora Writer Endpoint SSM Parameter */
     new StringParameter(this, `${props.appName}-aurora-writer-endpoint-ssm`, {

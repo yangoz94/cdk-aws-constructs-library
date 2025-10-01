@@ -10,7 +10,12 @@ import { Construct } from "constructs";
 import { Duration, RemovalPolicy } from "aws-cdk-lib";
 
 /**
- * Configuration options for Cognito setup in APIGatewayConstruct.
+ * !!! CRITICAL WARNING !!!
+ * 
+ * COGNITO USER POOL REQUIRES APEX DOMAIN TO HAVE AN A RECORD FOR ADDING CUSTOM DOMAIN. 
+ * ADD A PLACEHOLDER A RECORD OR YOUR FRONTEND DOMAIN TO THE HOSTED ZONE BEFORE DEPLOYING.
+ * OTHERWISE, USER POOL DOMAIN CREATION WILL FAIL AND CDK WILL ROLLBACK.
+ * 
  */
 export interface CognitoConfig {
   selfSignUpEnabled?: boolean;
@@ -147,15 +152,6 @@ export class APIGatewayWithCognitoUserPoolConstruct extends Construct {
       }
     }
 
-    /* API Gateway Cognito Authorizer */
-    this.authorizer = new apigw.CognitoUserPoolsAuthorizer(
-      this,
-      `${props.appName}-cognito-authorizer`,
-      {
-        cognitoUserPools: [userPool],
-      }
-    );
-
     /* Access Logging Setup */
     const accessLogGroup = new logs.LogGroup(
       this,
@@ -199,6 +195,20 @@ export class APIGatewayWithCognitoUserPoolConstruct extends Construct {
       cloudWatchRole: true,
       cloudWatchRoleRemovalPolicy: RemovalPolicy.DESTROY,
     });
+
+    /* API Gateway Cognito Authorizer */
+    this.authorizer = new apigw.CognitoUserPoolsAuthorizer(
+      this,
+      `${props.appName}-cognito-authorizer`,
+      {
+        cognitoUserPools: [userPool],
+        authorizerName: `${props.appName}-cognito-authorizer`,
+        identitySource: "method.request.header.Authorization",
+      }
+    );
+
+    /* Attach authorizer to the REST API */
+    this.authorizer._attachToApi(this.restApi);
 
     /* Custom Domain Configuration */
     const hostedZone = route53.HostedZone.fromHostedZoneId(
@@ -246,7 +256,7 @@ export class APIGatewayWithCognitoUserPoolConstruct extends Construct {
       ttl: Duration.minutes(5),
     });
 
-    /* Hosted UI Custom Domain */
+    /* Hosted UI Custom Domain Certificate */
     const hostedUICertificate = new certificatemanager.Certificate(
       this,
       `${props.appName}-auth-certificate`,
@@ -258,6 +268,7 @@ export class APIGatewayWithCognitoUserPoolConstruct extends Construct {
       }
     );
 
+    /* Cognito User Pool Domain with Custom Domain */
     const userPoolDomain = new cognito.UserPoolDomain(
       this,
       `${props.appName}-userpool-domain`,

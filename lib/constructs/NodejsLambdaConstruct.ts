@@ -62,7 +62,7 @@ export enum DynamoDBPermissions {
 /**
  * Properties for configuring the LambdaConstruct.
  */
-export interface LambdaConstructProps {
+export interface NodejsLambdaConstructProps {
   /**
    * The application name used as a prefix in resource names.
    */
@@ -161,7 +161,7 @@ export interface LambdaConstructProps {
  *   entry: 'sqs-handler.ts',
  * });
  */
-export class LambdaConstruct extends Construct {
+export class NodejsLambdaConstruct extends Construct {
   /**
    * The created Lambda function resource.
    */
@@ -172,9 +172,9 @@ export class LambdaConstruct extends Construct {
    *
    * @param {Construct} scope - The parent construct, typically a CDK stack.
    * @param {string} id - The unique identifier for this construct.
-   * @param {LambdaConstructProps} props - Properties for configuring the Lambda function and API Gateway integration.
+   * @param {NodejsLambdaConstructProps} props - Properties for configuring the Lambda function and API Gateway integration.
    */
-  constructor(scope: Construct, id: string, props: LambdaConstructProps) {
+  constructor(scope: Construct, id: string, props: NodejsLambdaConstructProps) {
     super(scope, id);
 
     const depsLockFilePath = props.entry.replace(/\/[^/]+\.ts$/, "/package-lock.json");
