@@ -6,10 +6,10 @@ import * as ec2 from "aws-cdk-lib/aws-ec2";
  * Properties for configuring the NetworkingConstruct.
  */
 interface NetworkingConstructProps extends cdk.StackProps {
-  /**
-   * The application name to use as a prefix in resource names.
-   */
-  appName: string;
+    /**
+     * The application name to use as a prefix in resource names.
+     */
+    appName: string;
 }
 
 /**
@@ -25,51 +25,63 @@ interface NetworkingConstructProps extends cdk.StackProps {
  * });
  */
 export class NetworkingConstruct extends Construct {
-  /**
-   * The created VPC resource.
-   */
-  public readonly vpc: ec2.Vpc;
+    /**
+     * The created VPC resource.
+     */
+    public readonly vpc: ec2.Vpc;
 
-  /**
-   * Constructs a new instance of the NetworkingConstruct.
-   *
-   * @param {Construct} scope - The parent construct, typically a CDK stack.
-   * @param {string} id - The unique identifier for this construct.
-   * @param {NetworkingConstructProps} props - Properties for configuring the VPC.
-   */
-  constructor(scope: Construct, id: string, props: NetworkingConstructProps) {
-    super(scope, id);
+    /**
+     * Constructs a new instance of the NetworkingConstruct.
+     *
+     * @param {Construct} scope - The parent construct, typically a CDK stack.
+     * @param {string} id - The unique identifier for this construct.
+     * @param {NetworkingConstructProps} props - Properties for configuring the VPC.
+     */
+    constructor(scope: Construct, id: string, props: NetworkingConstructProps) {
+        super(scope, id);
 
-    /* Create a VPC with public and private isolated subnets. */
-    this.vpc = new ec2.Vpc(this, `${props.appName}-vpc`, {
-      vpcName: `${props.appName}-vpc`,
-      ipAddresses: ec2.IpAddresses.cidr("10.1.0.0/16"),
-      maxAzs: 2,
-      createInternetGateway: true,
-      subnetConfiguration: [
-        {
-          cidrMask: 24,
-          name: `${props.appName}-public-`,
-          subnetType: ec2.SubnetType.PUBLIC,
-        },
-        {
-          cidrMask: 24,
-          name: `${props.appName}-private-isolated-`,
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-        },
-        {
-          cidrMask: 24,
-          name: `${props.appName}-private-egress-`,
-          subnetType:
-            ec2.SubnetType
-              .PRIVATE_WITH_EGRESS /* no NAT Gateways - can use only vpc endpoints for internal communication */,
-        },
-      ],
-      natGateways: 0,
-      restrictDefaultSecurityGroup: true,
-    });
+        /* Create a VPC with public and private isolated subnets. */
+        this.vpc = new ec2.Vpc(this, `${props.appName}-vpc`, {
+            vpcName: `${props.appName}-vpc`,
+            ipAddresses: ec2.IpAddresses.cidr("10.1.0.0/16"),
+            maxAzs: 2,
+            createInternetGateway: true,
+            subnetConfiguration: [
+                {
+                    cidrMask: 24,
+                    name: `${props.appName}-public-`,
+                    subnetType: ec2.SubnetType.PUBLIC,
+                },
+                {
+                    cidrMask: 24,
+                    name: `${props.appName}-private-isolated-`,
+                    subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+                },
+                {
+                    cidrMask: 24,
+                    name: `${props.appName}-private-egress-`,
+                    subnetType:
+                        ec2.SubnetType
+                            .PRIVATE_WITH_EGRESS /* no NAT Gateways - can use only vpc endpoints for internal communication */,
+                },
+            ],
+            natGateways: 0,
+            restrictDefaultSecurityGroup: true,
+        });
 
-    /* Tag the VPC */
-    cdk.Tags.of(this.vpc).add("Name", `${props.appName}-vpc`);
-  }
+        /* Add S3 Gateway Endpoint to the VPC for Internal Communication  (Free)*/
+        this.vpc.addGatewayEndpoint(`${props.appName}-s3-endpoint`, {
+            service: ec2.GatewayVpcEndpointAwsService.S3,
+            subnets: [{ subnets: this.vpc.privateSubnets }],
+        });
+
+        /* Add DynamoDB Gateway Endpoint to the VPC for Internal Communication  (Free)*/
+        this.vpc.addGatewayEndpoint(`${props.appName}-dynamodb-endpoint`, {
+            service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
+            subnets: [{ subnets: this.vpc.privateSubnets }],
+        });
+
+        /* Tag the VPC */
+        cdk.Tags.of(this.vpc).add("Name", `${props.appName}-vpc`);
+    }
 }
